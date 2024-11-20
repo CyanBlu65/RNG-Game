@@ -109,7 +109,7 @@
             'Uncommon': 'A rarer find, with unique properties.'
         };
 
-        // Auras with properties
+// Define the auras array
         const auras = [
     { name: "Basic", rarity: "1 in 2", description: "A simple aura, common and easily found." },
     { name: "Uncommon", rarity: "1 in 4", description: "A rarer aura with more potent effects." },
@@ -185,6 +185,75 @@
     { name: "Undefined", rarity: "1 in 1000000000", description: "An enigmatic and unexplainable aura, existing outside of the known laws of reality. Its effects are unpredictable, with no clear origin or purpose." }
 
 ];
+// Function to pick a random aura
+function getRandomAura() {
+    const randomIndex = Math.floor(Math.random() * auras.length);
+    return auras[randomIndex];
+}
+
+// Example: Assign a random aura to a player
+const player = {
+    name: "Player1",
+    aura: getRandomAura()
+};
+
+// Display the player's aura
+console.log(`${player.name} has obtained the aura: ${player.aura.name}`);
+console.log(`Rarity: ${player.aura.rarity}`);
+console.log(`Description: ${player.aura.description}`);
+
+// Render all auras for display (useful for listing in a UI or logs)
+function renderAuras() {
+    console.log("Listing all available auras:");
+    auras.forEach(aura => {
+        console.log(`Name: ${aura.name}`);
+        console.log(`Rarity: ${aura.rarity}`);
+        console.log(`Description: ${aura.description}`);
+        console.log("-----------------------------");
+    });
+}
+
+// Example: Render auras
+renderAuras();
+
+// Integrate into game mechanics
+function assignAuraToPlayer(playerName) {
+    const aura = getRandomAura();
+    console.log(`Assigning an aura to ${playerName}...`);
+    console.log(`Name: ${aura.name}`);
+    console.log(`Rarity: ${aura.rarity}`);
+    console.log(`Description: ${aura.description}`);
+    return { name: playerName, aura };
+}
+
+// Example: Assign an aura to another player
+const player2 = assignAuraToPlayer("Player2");
+console.log(`${player2.name} has the aura ${player2.aura.name}!`);
+
+// Save and track auras
+let gameState = {
+    players: [],
+    addPlayer(player) {
+        this.players.push(player);
+    },
+    displayPlayers() {
+        this.players.forEach(player => {
+            console.log(`Player: ${player.name}`);
+            console.log(`Aura: ${player.aura.name}`);
+            console.log(`Description: ${player.aura.description}`);
+            console.log("-----------------------------");
+        });
+    }
+};
+
+// Add players to game state
+gameState.addPlayer(player);
+gameState.addPlayer(player2);
+
+// Display all players and their auras
+console.log("Current Game State:");
+gameState.displayPlayers();
+
 
         // Functions
         function roll() {
