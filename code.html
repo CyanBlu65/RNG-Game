@@ -1,319 +1,332 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>RNG Aura Game</title>
-<style>
-    body {
-    font-family: Arial, sans-serif;
-    text-align: center;
-    margin: 0; /* Remove default margin */
-    height: 100vh; /* Full height for vertical centering */
-    display: flex;
-    flex-direction: column;
-    justify-content: center; /* Center vertically */
-    align-items: center; /* Center horizontally */
-}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A Cool RNG Game</title>
+    <style>
+        body {
+            background-color: #f5f5f5;
+            color: #333;
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
 
-.container {
-    display: flex;
-    justify-content: center; /* Center buttons horizontally */
-    margin-bottom: 20px; /* Space between buttons and the main content */
-}
+        h1 {
+            margin-top: 20px;
+        }
 
-.main-content {
-    margin-left: 20px; /* Reduced margin for main content */
-}
+        button {
+            padding: 10px 15px;
+            background-color: #4CAF50;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            margin: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
 
-button {
-    padding: 10px 20px;
-    font-size: 16px;
-    cursor: pointer;
-    background-color: #4CAF50;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    transition: background-color 0.3s;
-}
+        button:hover {
+            background-color: #45a049;
+        }
 
-button:hover {
-    background-color: #45a049;
-}
+        #inventory, #craftingProgressContainer, #achievementsContainer, #aurasCollectionContainer {
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin-top: 10px;
+            border-radius: 5px;
+            width: 300px;
+        }
 
-#collection {
-    text-align: left;
-    font-size: 16px;
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    max-height: 300px;
-    overflow-y: auto;
-    display: none;
-}
-</style>
+        #progressBar {
+            width: 100%;
+            background: #ccc;
+        }
+
+        #progressFill {
+            width: 0%;
+            height: 20px;
+            background: #4CAF50;
+        }
+    </style>
 </head>
 <body>
+    <h1>A Cool RNG Game</h1>
+    <p>Click the roll button to roll for an aura:</p>
 
-<h2>A Cool RNG Game</h2>
-<p>Click the roll button to roll for an aura:</p>
+    <button onclick="roll()">Roll</button>
+    <button onclick="viewCollection()">Collection</button>
+    <button onclick="claimDailyReward()">Claim Daily Reward</button>
 
-<div class="container">
-    <div class="main-content">
-        <button onclick="getRandomAura()" id="rollButton">Roll</button>
-        <div class="cooldown-overlay" id="cooldownOverlay"></div>
-        <p id="aura"></p>
-        <p id="biomeText">Biome: Normal</p>
-        <p id="weatherText">Weather: Regular</p>
-        <p id="levelText">Level: 1</p>
+    <p id="rollResult">You obtained:</p>
+
+    <div id="inventory">
+        <h3>Inventory</h3>
+        <ul id="inventoryList"></ul>
     </div>
-    <div>
-        <button onclick="toggleCollection()">Collection</button>
+
+    <div id="aurasCollectionContainer">
+        <h3>Auras Collection</h3>
+        <ul id="aurasCollectionList"></ul>
     </div>
-</div>
 
-<div id="collection">
-    <h3>Collection</h3>
-    <p id="rolls">Rolls: 0</p>
-    <ul id="auraList"></ul>
-</div>
-
-<div class="crafting-section">
-    <h3>Crafting</h3>
-    <div class="crafting-item">
+    <div id="crafting">
+        <h3>Crafting</h3>
         <button onclick="craftItem('Luck Glove')">Craft Luck Glove</button>
         <p>Requires: 5 Basics, 5 Uncommons</p>
-    </div>
-    <div class="crafting-item">
         <button onclick="craftItem('Luck Ring')">Craft Luck Ring</button>
         <p>Requires: 3 Basics, 3 Uncommons</p>
     </div>
-</div>
 
-<audio id="rollSound" src="roll-sound.mp3"></audio>
-<audio id="craftSound" src="craft-sound.mp3"></audio>
+    <div id="craftingProgressContainer">
+        <p>Crafting Progress:</p>
+        <div id="progressBar">
+            <div id="progressFill"></div>
+        </div>
+    </div>
 
-<script>
-    let rolls = 0;
-    let rollCooldown = false;
-    let playerLevel = 1; // Added player level
-    const auras = [
-        { name: "Basic", rarity: "1 in 2" },
-        { name: "Uncommon", rarity: "1 in 4" },
-        { name: "Good", rarity: "1 in 5" },
-        { name: "Natural", rarity: "1 in 8" },
-        { name: "Rare", rarity: "1 in 16" },
-        { name: "Divinus", rarity: "1 in 32" },
-        { name: "Crystallized", rarity: "1 in 64" },
-        { name: "Rage", rarity: "1 in 128" },
-        { name: "Topaz", rarity: "1 in 150" },
-        { name: "Glacier", rarity: "1 in 256" },
-        { name: "Wind", rarity: "1 in 300" },
-        { name: "Ruby", rarity: "1 in 350" },
-        { name: "Forbidden", rarity: "1 in 404" },
-        { name: "Emerald", rarity: "1 in 500" },
-        { name: "Guilded", rarity: "1 in 512" },
-        { name: "Ink", rarity: "1 in 700" },
-        { name: "Jackpot", rarity: "1 in 777" },
-        { name: "Sapphire", rarity: "1 in 800" },
-        { name: "Aquamarine", rarity: "1 in 900" },
-        { name: "Diaboli", rarity: "1 in 1004" },
-        { name: "Precious", rarity: "1 in 1024" },
-        { name: "𝐮几∂𝐄𝕗เ几𝐄∂", rarity: "1 in 1001" },
-        { name: "Glock", rarity: "1 in 1700" },
-        { name: "Magentic", rarity: "1 in 2048" },
-        { name: "Sidereum", rarity: "1 in 4096" },
-        { name: "Bleeding", rarity: "1 in 4444" },
-        { name: "Solar", rarity: "1 in 5000" },
-        { name: "Lunar", rarity: "1 in 5000" },
-        { name: "Starlight", rarity: "1 in 5000" },
-        { name: ":Flushed:", rarity: "1 in 6900" },
-        { name: "Hazard", rarity: "1 in 7000" },
-        { name: "Quartz", rarity: "1 in 8192" },
-        { name: "Undead", rarity: "1 in 12000" },
-        { name: "Corrosive", rarity: "1 in 12000" },
-        { name: "Rage:Heated", rarity: "1 in 12800" },
-        { name: "Powered", rarity: "1 in 16384" },
-        { name: "Leak", rarity: "1 in 14000" },
-        { name: "Permafrost", rarity: "1 in 24000" },
-        { name: "Stormal", rarity: "1 in 30000" },
-        { name: "Aquatic", rarity: "1 in 40000" },
-        { name: ":Flushed:Lobotomy", rarity: "1 in 69000" },
-        { name: "Nautilus", rarity: "1 in 70000" },
-        { name: "Exotic", rarity: "1 in 99000" },
-        { name: "Undead:Devil", rarity: "1 in 100000" },
-        { name: "Diaboli:Void", rarity: "1 in 100400" },
-        { name: "Jade", rarity: "1 in 125000" },
-        { name: "Bounded", rarity: "1 in 200000" },
-        { name: "Celestial", rarity: "1 in 350000" },
-        { name: "Galaxy", rarity: "1 in 500000" },
-        { name: "Lunar:Full Moon", rarity: "1 in 500000" },
-        { name: "Twilight", rarity: "1 in 600000" },
-        { name: "Kyawthuite", rarity: "1 in 850000" },
-        { name: "Arcane", rarity: "1 in 1000000" },
-        { name: "Starscourge", rarity: "1 in 1000000" },
-        { name: "Magnetic:Reverse Polarity", rarity: "1 in 1024000" },
-        { name: "Gravitational", rarity: "1 in 2000000" },
-        { name: "Bounded:Unbound", rarity: "1 in 2000000" },
-        { name: "Virtual", rarity: "1 in 2500000" },
-        { name: "Sailor", rarity: "1 in 3000000" },
-        { name: "Poseidon", rarity: "1 in 3800000" },
-        { name: "Aquatic:Flame", rarity: "1 in 4000000" },
-        { name: "Hades", rarity: "1 in 6666666" },
-        { name: "Hyper-Volt", rarity: "1 in 75000000" },
-        { name: "Glitch", rarity: "1 in 12210110" },
-        { name: "Arcane:Legacy", rarity: "1 in 15000000" },
-        { name: "Chromatic", rarity: "1 in 20000000" },
-        { name: "Arcane:Dark", rarity: "1 in 30000000" },
-        { name: "Ethereal", rarity: "1 in 35000000" },
-        { name: "Exotic:Apex", rarity: "1 in 50000000" },
-        { name: "Chromatic:Genesis", rarity: "1 in 100000000" },
-        { name: "Impeached", rarity: "1 in 200000000" },
-        { name: "Archangel", rarity: "1 in 250000000" },
-    ];
-    const biomes = [
-        { name: "Normal", rarity: "1 in 3" },
-        { name: "Starfall", rarity: "1 in 6000" },
-        // ... (rest of the biomes)
-    ];
-    const weather = [
-        { name: "Regular", rarity: "1 in 3" },
-        { name: "Windy", rarity: "1 in 500" },
-        // ... (rest of the weather)
-    ];
-    const collection = JSON.parse(localStorage.getItem('collection')) || {};
-    const rollButton = document.getElementById('rollButton');
-    const cooldownOverlay = document.getElementById('cooldownOverlay');
-    const biomeText = document.getElementById('biomeText');
-    const weatherText = document.getElementById('weatherText');
-    const levelText = document.getElementById('levelText');
-    
-    // Load saved game state
-    function loadGame() {
-        rolls = parseInt(localStorage.getItem('rolls')) || 0;
-        playerLevel = parseInt(localStorage.getItem('playerLevel')) || 1;
+    <div id="achievementsContainer">
+        <h3>Achievements</h3>
+        <ul id="achievementsList"></ul>
+    </div>
 
-        // Restore collection from localStorage
-        for (const aura in collection) {
-            collection[aura] = parseInt(collection[aura]);
-        }
+    <button onclick="saveGame()">Save Game</button>
+    <button onclick="loadGame()">Load Game</button>
 
-        updateCollection();
-        updateLevelText();
-        updateBiomeAndWeather();
-    }
-
-    // Function to get a random item from an array based on weighted probabilities
-    function getRandomItemWithWeight(array) {
-        const validItems = array.filter(item => !isNaN(parseInt(item.rarity.split(' ')[2])));
-        const totalWeight = validItems.reduce((acc, item) => acc + 1 / parseInt(item.rarity.split(' ')[2]), 0);
-        const threshold = Math.random() * totalWeight;
-        let cumulativeWeight = 0;
-
-        for (const item of validItems) {
-            cumulativeWeight += 1 / parseInt(item.rarity.split(' ')[2]);
-            if (cumulativeWeight >= threshold) {
-                return item;
-            }
-        }
-    }
-
-    function updateBiomeAndWeather() {
-        const selectedBiome = getRandomItemWithWeight(biomes);
-        const selectedWeather = getRandomItemWithWeight(weather);
-        biomeText.textContent = `Biome: ${selectedBiome.name}`;
-        weatherText.textContent = `Weather: ${selectedWeather.name}`;
-    }
-
-    function getRandomAura() {
-        if (!rollCooldown) {
-            rollCooldown = true;
-            rollButton.setAttribute('disabled', true);
-            cooldownOverlay.style.display = 'block';
-            document.getElementById('rollSound').play(); // Play roll sound
-            setTimeout(() => {
-                rollButton.removeAttribute('disabled');
-                cooldownOverlay.style.display = 'none';
-                rollCooldown = false;
-                rolls++;
-                const aura = getRandomItemWithWeight(auras);
-                document.getElementById('aura').innerText = `You obtained: ${aura.name} (${aura.rarity})`;
-                document.getElementById('rolls').innerText = `Rolls: ${rolls}`;
-                if (!collection[aura.name]) {
-                    collection[aura.name] = 1;
-                } else {
-                    collection[aura.name]++;
-                }
-                levelUp();
-                updateCollection();
-                updateBiomeAndWeather();
-                saveGame(); // Save game state after each roll
-            }, 1000);
-        }
-    }
-
-    function levelUp() {
-        if (rolls >= 5 * playerLevel) { // Level up every 5 rolls
-            playerLevel++;
-            alert(`Congratulations! You've leveled up to level ${playerLevel}!`);
-            updateLevelText();
-            saveGame(); // Save game state after leveling up
-        }
-    }
-
-    function updateLevelText() {
-        levelText.textContent = `Level: ${playerLevel}`;
-        localStorage.setItem('playerLevel', playerLevel);
-    }
-
-    function updateCollection() {
-        const auraList = document.getElementById('auraList');
-        auraList.innerHTML = '';
-        for (const aura in collection) {
-            const li = document.createElement('li');
-            li.textContent = `${aura}: ${collection[aura]}`;
-            auraList.appendChild(li);
-        }
-        localStorage.setItem('collection', JSON.stringify(collection)); // Save collection state
-        document.getElementById('rolls').innerText = `Rolls: ${rolls}`;
-        localStorage.setItem('rolls', rolls); // Save rolls
-    }
-
-    function toggleCollection() {
-        const collectionDiv = document.getElementById('collection');
-        collectionDiv.style.display = (collectionDiv.style.display === 'none') ? 'block' : 'none';
-    }
-
-    function craftItem(itemName) {
-        const requiredAuras = {
-            'Luck Glove': { 'Basic': 5, 'Uncommon': 5 },
-            'Luck Ring': { 'Basic': 3, 'Uncommon': 3 }
+    <script>
+        // Data structures
+        let collection = { 'Basic': 0, 'Uncommon': 0 };
+        let craftedItems = [];
+        const achievements = {
+            'First Craft': { completed: false, criteria: () => craftedItems.length >= 1 },
+            'Rare Collector': { completed: false, criteria: () => collection['Uncommon'] >= 5 }
         };
-        
-        const requirements = requiredAuras[itemName];
-        let canCraft = true;
-        
-        for (const aura in requirements) {
-            if (!collection[aura] || collection[aura] < requirements[aura]) {
-                canCraft = false;
-                break;
-            }
-        }
-        
-        if (canCraft) {
-            for (const aura in requirements) {
-                collection[aura] -= requirements[aura];
-            }
-            document.getElementById('craftSound').play(); // Play crafting sound
-            alert(`You crafted: ${itemName}`);
-            updateCollection();
-        } else {
-            alert(`You don't have enough auras to craft ${itemName}.`);
-        }
-    }
+        const itemDescriptions = {
+            'Basic': 'A simple item, easy to find in most biomes.',
+            'Uncommon': 'A rarer find, with unique properties.'
+        };
 
-    // Load the game state on page load
-    loadGame();
-</script>
+        // Auras with properties
+        const auras = [
+    { name: "Basic", rarity: "1 in 2", description: "A simple aura, common and easily found." },
+    { name: "Uncommon", rarity: "1 in 4", description: "A rarer aura with more potent effects." },
+    { name: "Good", rarity: "1 in 5", description: "A beneficial aura with positive outcomes." },
+    { name: "Natural", rarity: "1 in 8", description: "A pure, organic aura that harmonizes with nature." },
+    { name: "Rare", rarity: "1 in 12", description: "An uncommon aura, harder to find and more powerful." },
+    { name: "Divinus", rarity: "1 in 20", description: "A divine aura that radiates with celestial power." },
+    { name: "Crystallized", rarity: "1 in 30", description: "A glowing aura, solid and unbreakable like crystal." },
+    { name: "Rage", rarity: "1 in 40", description: "An aura fueled by intense fury and aggression." },
+    { name: "Topaz", rarity: "1 in 50", description: "A rare aura that shimmers with golden brilliance." },
+    { name: "Glacier", rarity: "1 in 60", description: "An icy aura, cold and unforgiving, like the polar regions." },
+    { name: "Wind", rarity: "1 in 80", description: "A swift aura, as light and free as the wind." },
+    { name: "Ruby", rarity: "1 in 100", description: "A fiery aura, burning with the intensity of rubies." },
+    { name: "Forbidden", rarity: "1 in 120", description: "A mysterious aura, dangerous and forbidden." },
+    { name: "Emerald", rarity: "1 in 150", description: "A glowing green aura, radiating with nature's energy." },
+    { name: "Guilded", rarity: "1 in 200", description: "A golden aura, symbolizing wealth and power." },
+    { name: "Ink", rarity: "1 in 300", description: "A dark, mysterious aura, full of secrets." },
+    { name: "Jackpot", rarity: "1 in 400", description: "An aura of luck, bringing immense fortune." },
+    { name: "Sapphire", rarity: "1 in 500", description: "A deep blue aura, calming and serene." },
+    { name: "Aquamarine", rarity: "1 in 600", description: "A cool, oceanic aura, filled with the essence of the sea." },
+    { name: "Diaboli", rarity: "1 in 800", description: "A dark aura, echoing the forces of the underworld." },
+    { name: "Precious", rarity: "1 in 1000", description: "An aura that holds immense value, treasured beyond measure." },
+    { name: "Glock", rarity: "1 in 1200", description: "A hard-hitting, powerful aura with a sharp impact." },
+    { name: "Magentic", rarity: "1 in 1500", description: "An aura with the force of magnetism, pulling things towards it." },
+    { name: "Sidereum", rarity: "1 in 2000", description: "A cosmic aura, connected to the stars and galaxies." },
+    { name: "Bleeding", rarity: "1 in 2500", description: "An aura that radiates with raw, painful energy." },
+    { name: "Solar", rarity: "1 in 3000", description: "A radiant, sun-powered aura, glowing with light." },
+    { name: "Lunar", rarity: "1 in 3500", description: "A mysterious, moonlit aura that shimmers in the dark." },
+    { name: "Starlight", rarity: "1 in 4000", description: "An aura imbued with the light of distant stars." },
+    { name: ":Flushed:", rarity: "1 in 5000", description: "A quirky and humorous aura, with a touch of blush." },
+    { name: "Hazard", rarity: "1 in 6000", description: "A dangerous, volatile aura that can cause chaos." },
+    { name: "Quartz", rarity: "1 in 7000", description: "A clear, crystal-like aura, known for its purity." },
+    { name: "Undead", rarity: "1 in 10000", description: "A dark, eerie aura associated with the undead." },
+    { name: "Corrosive", rarity: "1 in 12000", description: "An aura that erodes and weakens anything it touches." },
+    { name: "Rage:Heated", rarity: "1 in 14000", description: "A rage-fueled aura, more intense and heated than ever." },
+    { name: "Powered", rarity: "1 in 16000", description: "A powerful aura with limitless energy." },
+    { name: "Leak", rarity: "1 in 18000", description: "An aura with a subtle but constant leakage of energy." },
+    { name: "Permafrost", rarity: "1 in 25000", description: "An unyielding, cold aura that freezes everything it touches." },
+    { name: "Stormal", rarity: "1 in 30000", description: "An aura of fierce storms, crackling with energy." },
+    { name: "Aquatic", rarity: "1 in 40000", description: "An aura that mimics the calm and fury of the ocean." },
+    { name: ":Flushed:Lobotomy", rarity: "1 in 50000", description: "A bizarre, almost insane aura with unpredictable effects." },
+    { name: "Nautilus", rarity: "1 in 60000", description: "A deep-sea aura, ancient and full of mystery." },
+    { name: "Exotic", rarity: "1 in 70000", description: "A rare and outlandish aura, unlike anything seen before." },
+    { name: "Undead:Devil", rarity: "1 in 90000", description: "A devilish aura, corrupted and from beyond the grave." },
+    { name: "Diaboli:Void", rarity: "1 in 120000", description: "An aura linked to the void, an endless and dark dimension." },
+    { name: "Jade", rarity: "1 in 150000", description: "A rare aura, rich in deep green hues and mysterious power." },
+    { name: "Bounded", rarity: "1 in 300000", description: "An aura that binds and restricts, holding immense control." },
+    { name: "Celestial", rarity: "1 in 400000", description: "An ethereal aura, connected to the heavens and stars." },
+    { name: "Galaxy", rarity: "1 in 500000", description: "An aura imbued with the vastness of the galaxy itself." },
+    { name: "Lunar:Full Moon", rarity: "1 in 600000", description: "A full moon's aura, radiant and full of power." },
+    { name: "Twilight", rarity: "1 in 700000", description: "A serene and mystical aura, like the twilight hours." },
+    { name: "Kyawthuite", rarity: "1 in 800000", description: "A rare and mystical aura with unexplainable properties." },
+    { name: "Arcane", rarity: "1 in 1000000", description: "A magical aura filled with arcane energy." },
+    { name: "Starscourge", rarity: "1 in 1200000", description: "An aura filled with the curse of the stars, powerful and deadly." },
+    { name: "Magnetic:Reverse Polarity", rarity: "1 in 1500000", description: "An aura with reversed magnetic forces, defying all laws." },
+    { name: "Gravitational", rarity: "1 in 2000000", description: "An aura with intense gravitational pull, warping space." },
+    { name: "Bounded:Unbound", rarity: "1 in 3000000", description: "An aura that is simultaneously bound and free, in perfect balance." },
+    { name: "Virtual", rarity: "1 in 4000000", description: "A digital, virtual aura that exists beyond the physical." },
+    { name: "Sailor", rarity: "1 in 5000000", description: "A nautical aura, strong and brave like a sailor." },
+    { name: "Poseidon", rarity: "1 in 6000000", description: "An aura of the sea god Poseidon, controlling the oceans." },
+    { name: "Aquatic:Flame", rarity: "1 in 7000000", description: "An aura combining water and fire, dangerous yet beautiful." },
+    { name: "Hades", rarity: "1 in 8000000", description: "A dark aura of death, emanating from the underworld." },
+    { name: "Hyper-Volt", rarity: "1 in 10000000", description: "An electrifying aura, capable of generating intense voltage." },
+    { name: "Glitch", rarity: "1 in 15000000", description: "A digital aura, filled with erratic and unpredictable energy." },
+    { name: "Arcane:Legacy", rarity: "1 in 20000000", description: "A powerful arcane aura, filled with ancient magical energy." },
+    { name: "Chromatic", rarity: "1 in 25000000", description: "A multi-colored aura that shifts and changes constantly." },
+    { name: "Arcane:Dark", rarity: "1 in 30000000", description: "A dark version of the arcane aura, filled with ominous power." },
+    { name: "Ethereal", rarity: "1 in 35000000", description: "A translucent, ghostly aura that defies the physical world." },
+    { name: "Exotic:Apex", rarity: "1 in 40000000", description: "An apex-level exotic aura, rare and full of unique properties." },
+    { name: "Chromatic:Genesis", rarity: "1 in 50000000", description: "A creation-based aura, shifting through all possible colors." },
+    { name: "Impeached", rarity: "1 in 60000000", description: "An aura of rejection, bringing down those who wield it." },
+    { name: "Archangel", rarity: "1 in 80000000", description: "An aura of celestial grace, radiant and divine, a gift from the heavens." },
+    { name: "Undefined", rarity: "1 in 1000000000", description: "An enigmatic and unexplainable aura, existing outside of the known laws of reality. Its effects are unpredictable, with no clear origin or purpose." }
+
+];
+
+        // Functions
+        function roll() {
+            const rolledAura = getRandomAura();
+            collection[rolledAura.name] = (collection[rolledAura.name] || 0) + 1;
+            document.getElementById('rollResult').textContent = `You obtained: ${rolledAura.name} (${rolledAura.rarity}) - ${rolledAura.description}`;
+            updateAurasCollection();
+            checkAchievements();
+        }
+
+        function getRandomAura() {
+            const roll = Math.random();
+            if (roll < 0.5) return auras[0];
+            if (roll < 0.75) return auras[1];
+            if (roll < 0.875) return auras[2];
+            if (roll < 0.9375) return auras[3];
+            return auras[4];
+        }
+
+        function viewCollection() {
+            alert('Collection: ' + JSON.stringify(collection));
+        }
+
+        function updateInventory() {
+            const inventoryList = document.getElementById('inventoryList');
+            inventoryList.innerHTML = '';
+            for (const [item, count] of Object.entries(collection)) {
+                const listItem = document.createElement('li');
+                listItem.textContent = `${item}: ${count}`;
+                inventoryList.appendChild(listItem);
+            }
+        }
+
+        function updateAurasCollection() {
+            const aurasCollectionList = document.getElementById('aurasCollectionList');
+            aurasCollectionList.innerHTML = '';
+            auras.forEach(aura => {
+                const listItem = document.createElement('li');
+                listItem.textContent = `${aura.name} - ${aura.rarity}: ${aura.description}`;
+                aurasCollectionList.appendChild(listItem);
+            });
+        }
+
+        function craftItem(itemName) {
+            if (itemName === 'Luck Glove' && collection['Basic'] >= 5 && collection['Uncommon'] >= 5) {
+                collection['Basic'] -= 5;
+                collection['Uncommon'] -= 5;
+                craftedItems.push(itemName);
+                startCraftingProgress();
+            } else if (itemName === 'Luck Ring' && collection['Basic'] >= 3 && collection['Uncommon'] >= 3) {
+                collection['Basic'] -= 3;
+                collection['Uncommon'] -= 3;
+                craftedItems.push(itemName);
+                startCraftingProgress();
+            } else {
+                alert('Not enough resources to craft ' + itemName);
+            }
+            updateInventory();
+            checkAchievements();
+        }
+
+        function startCraftingProgress() {
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += 10;
+                updateProgressBar(progress);
+                if (progress >= 100) {
+                    clearInterval(interval);
+                    alert('Crafting complete!');
+                    updateAchievementsUI();
+                }
+            }, 100);
+        }
+
+        function updateProgressBar(progress) {
+            const progressFill = document.getElementById('progressFill');
+            progressFill.style.width = progress + '%';
+        }
+
+        function claimDailyReward() {
+            const lastClaim = localStorage.getItem('lastDailyReward');
+            const today = new Date().toDateString();
+            if (lastClaim === today) {
+                alert('You have already claimed your daily reward today!');
+            } else {
+                localStorage.setItem('lastDailyReward', today);
+                collection['Daily Reward Item'] = (collection['Daily Reward Item'] || 0) + 1;
+                alert('You claimed a daily reward!');
+                updateInventory();
+            }
+        }
+
+        function checkAchievements() {
+            for (const [name, achievement] of Object.entries(achievements)) {
+                if (!achievement.completed && achievement.criteria()) {
+                    achievement.completed = true;
+                    alert(`Achievement Unlocked: ${name}`);
+                    updateAchievementsUI();
+                }
+            }
+        }
+
+        function updateAchievementsUI() {
+            const achievementsList = document.getElementById('achievementsList');
+            achievementsList.innerHTML = '';
+            for (const [name, achievement] of Object.entries(achievements)) {
+                const listItem = document.createElement('li');
+                listItem.textContent = `${name} - ${achievement.completed ? 'Completed' : 'Incomplete'}`;
+                achievementsList.appendChild(listItem);
+            }
+        }
+
+        function saveGame() {
+            const gameData = {
+                collection,
+                craftedItems,
+                auras
+            };
+            localStorage.setItem('rngGameSave', JSON.stringify(gameData));
+            alert('Game saved!');
+        }
+
+        function loadGame() {
+            const savedData = localStorage.getItem('rngGameSave');
+            if (savedData) {
+                const gameData = JSON.parse(savedData);
+                collection = gameData.collection || { 'Basic': 0, 'Uncommon': 0 };
+                craftedItems = gameData.craftedItems || [];
+                auras.push(...gameData.auras || []);
+                updateInventory();
+                updateAurasCollection();
+                updateAchievementsUI();
+                alert('Game loaded!');
+            } else {
+                alert('No saved game found.');
+            }
+        }
+
+        // Initialize
+        updateInventory();
+        updateAchievementsUI();
+        updateAurasCollection();
+    </script>
 </body>
 </html>
